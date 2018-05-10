@@ -20,6 +20,7 @@ before_script:
 
   # Power install
   - echo $NPMRC >> ~/.npmrc
+  - echo ~/.npmrc
   - npm i -g @abx/power-ups
   - kinesis start --pull
 
