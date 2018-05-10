@@ -1,0 +1,32 @@
+sudo: required
+language: node_js
+services:
+  - docker
+addons:
+  hosts:
+    - kinesis-local.abx.com
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+before_script:
+  - echo $DOCKER_PW | docker login -u="$DOCKER_USERNAME" --password-stdin
+  - docker swarm init
+
+  # Add AWS Creds
+  - mkdir ~/.aws
+  - echo "[default]" >> ~/.aws/credentials
+  - echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
+  - echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
+
+  # Power install
+  - echo "$NPMRC1" >> ~/.npmrc
+  - echo "$NPMRC2" >> ~/.npmrc
+  - echo "$NPMRC3" >> ~/.npmrc
+  - npm i -g @abx/power-ups
+  - kinesis start --pull
+
+  # Sleep for a minute
+  - echo "sleeping to let network stabalise"
+  - sleep 30
+script:
+  - npm test
