@@ -19,7 +19,7 @@ before_script:
   - echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
 
   # Power install
-  - echo $NPMRC >> ~/.npmrc
+  - echo "$NPMRC" >> ~/.npmrc
   - cat ~/.npmrc
   - npm i -g @abx/power-ups
   - kinesis start --pull
