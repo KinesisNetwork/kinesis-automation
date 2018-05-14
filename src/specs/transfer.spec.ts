@@ -67,7 +67,32 @@ describe('Transfer', function () {
     }
   })
 
-  it('verify "transfer" operation amount', () => {
-    console.log('TODO')
+  it.only('verify "transfer" operation amount', async () => {
+    const newAccount = network.getNewKeypair()
+    const transactionAmount = 100
+    const payableFee = await network.currentFee(transactionAmount)
+
+    await network.transferFunds(
+      network.rootPublic,
+      network.rootSecret,
+      newAccount.publicKey(),
+      transactionAmount,
+      true
+    )
+
+    await network.transferFunds(
+      newAccount.publicKey(),
+      newAccount.secret(),
+      newAccount.publicKey(),
+      transactionAmount,
+      false
+    )
+
+    const tx = await network.getMostRecentTransaction()
+
+    expect(tx.fee_paid).to.eql(payableFee * 10000000)
+    expect(tx.operations.length).to.eql(1)
+    const targetOp = tx.operations[0]
+    expect(targetOp.starting_balance).to.eql(transactionAmount.toFixed(7))
   })
 })
