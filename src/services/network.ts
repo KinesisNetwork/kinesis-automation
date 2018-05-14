@@ -41,6 +41,14 @@ export async function transferFunds(sourcePublicKey: string, sourcePrivateKey: s
   return server.submitTransaction(transaction)
 }
 
+export async function getMostRecentTransaction() {
+  const txs = await server.transactions().order('desc').limit(1).call()
+  let tx: any = txs.records[0]
+
+  tx.operations = (await tx.operations()).records
+  return tx
+}
+
 export function getNewKeypair() {
   return StellarSdk.Keypair.random()
 }
