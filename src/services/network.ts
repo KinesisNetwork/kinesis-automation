@@ -41,6 +41,66 @@ export async function transferFunds(sourcePublicKey: string, sourcePrivateKey: s
   return server.submitTransaction(transaction)
 }
 
+export async function transferFundsLowFee
+(sourcePublicKey: string,
+ sourcePrivateKey: string,
+ destinationPublicKey: string,
+ amount: number,
+ newAccount = false) {
+  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+
+  const account = await server.loadAccount(sourcePublicKey)
+  const requiredFee = await currentFeeInStroops(amount)
+  const paymentOperation = StellarSdk.Operation.payment({
+    destination: destinationPublicKey,
+    asset: StellarSdk.Asset.native(),
+    amount: (amount - 10).toFixed(7),
+  })
+
+  const createAccountOperation = StellarSdk.Operation.createAccount({
+    destination: destinationPublicKey,
+    startingBalance: amount.toFixed(7)
+  })
+
+  let transaction = new StellarSdk.TransactionBuilder(account, {fee: (requiredFee)})
+    .addOperation(newAccount ? createAccountOperation : paymentOperation)
+    .build()
+
+  transaction.sign(sourceKeypair)
+
+  return server.submitTransaction(transaction)
+}
+
+export async function transferFundsHighFee
+(sourcePublicKey: string,
+ sourcePrivateKey: string,
+ destinationPublicKey: string,
+ amount: number,
+ newAccount = false) {
+  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+
+  const account = await server.loadAccount(sourcePublicKey)
+  const requiredFee = await currentFeeInStroops(amount)
+  const paymentOperation = StellarSdk.Operation.payment({
+    destination: destinationPublicKey,
+    asset: StellarSdk.Asset.native(),
+    amount: (amount + 10).toFixed(7),
+  })
+
+  const createAccountOperation = StellarSdk.Operation.createAccount({
+    destination: destinationPublicKey,
+    startingBalance: amount.toFixed(7)
+  })
+
+  let transaction = new StellarSdk.TransactionBuilder(account, {fee: (requiredFee)})
+    .addOperation(newAccount ? createAccountOperation : paymentOperation)
+    .build()
+
+  transaction.sign(sourceKeypair)
+
+  return server.submitTransaction(transaction)
+}
+
 export async function getMostRecentTransaction() {
   const txs = await server.transactions().order('desc').limit(1).call()
   let tx: any = txs.records[0]

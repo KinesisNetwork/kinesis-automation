@@ -67,7 +67,7 @@ describe('Transfer', function () {
     }
   })
 
-  it.only('verify "transfer" operation amount', async () => {
+  it('verify "transfer" operation amount', async () => {
     const newAccount = network.getNewKeypair()
     const transactionAmount = 100
     const payableFee = await network.currentFee(transactionAmount)
