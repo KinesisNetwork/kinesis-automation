@@ -132,6 +132,25 @@ export async function currentFee(paymentAmount: number) {
   return Number(stroops) / stroopsInLumen
 }
 
+export async function currentBaseFeeString() {
+  const currentBaseFeeInStroops = await currentBaseFee()
+  return String(currentBaseFeeInStroops)
+}
+
+export async function getInflation(sourcePublicKey: string, sourcePrivateKey: string) {
+  const account = await server.loadAccount(sourcePublicKey)
+  const baseFee = await currentBaseFeeString()
+  const addInflation = StellarSdk.Operation.inflation({})
+  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+
+  let transaction = new StellarSdk.TransactionBuilder(account, {fee: (baseFee)})
+  .addOperation(addInflation)
+  .build()
+
+  transaction.sign(sourceKeypair)
+  return server.submitTransaction(transaction)
+}
+
 export function readSdkError(e) {
   return e.data.extras.result_codes
 }

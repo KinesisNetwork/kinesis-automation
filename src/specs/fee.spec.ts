@@ -83,8 +83,26 @@
     expect(targetAccountBalance).to.eql(transactionAmount)
   })
 
-  it('Only the base fee is required for operations that are not of type "transfer" or "create_account"', async () => {
-    console.log('TODO')
+  it.only('Only the base fee is required for operations that are not of type "transfer" or "create_account"', async () => {
+    const targetAccount = network.rootPublic
+    const baseFee = await network.currentBaseFee()
+    const rootAccountAfterInflation = await network.getInflation(targetAccount, network.rootSecret)
+    const targetAccountBalance = await network.getAccountBalance(targetAccount)
+    const balAfterInflation = targetAccountBalance - baseFee
+
+    console.log(targetAccount)
+    console.log('---')
+    console.log(network.rootSecret)
+    console.log('---')
+    console.log(baseFee)
+    console.log('---')
+    console.log(rootAccountAfterInflation)
+    console.log('---')
+    console.log(targetAccountBalance)
+    console.log('---')
+    console.log(balAfterInflation)
+
+    expect(targetAccountBalance).to.eql(balAfterInflation)
   })
 
   it('The network rejects "create_account" operations if the fee is too low', async () => {
