@@ -88,7 +88,7 @@ describe('Transfer', function () {
       false
     )
 
-    const tx = await network.getMostRecentTransaction()
+    const tx = (await network.getMostRecentTransactions())[0]
 
     expect(tx.fee_paid).to.eql(payableFee * 10000000)
     expect(tx.operations.length).to.eql(1)
