@@ -65,13 +65,15 @@ export async function transferFundsToMultipleAccount(
   const account = await server.loadAccount(sourcePublicKey)
 
   if (!fee) {
-    fee = await currentFeeInStroops(amount)
+   fee = await currentFeeInStroopsMultiOperations(amount * 2)
   }
+
   const paymentOperationOne = StellarSdk.Operation.payment({
     destination: destinationPublicKeyOne,
     asset: StellarSdk.Asset.native(),
     amount: amount.toFixed(7),
   })
+
   const paymentOperationTwo = StellarSdk.Operation.payment({
     destination: destinationPublicKeyTwo,
     asset: StellarSdk.Asset.native(),
@@ -92,8 +94,6 @@ export async function transferFundsToMultipleAccount(
   .addOperation(newAccount ? createAccountOperationOne : paymentOperationOne )
   .addOperation(newAccount ? createAccountOperationTwo : paymentOperationTwo)
   .build()
-
-  console.log(transaction)
 
   transaction.sign(sourceKeypair)
 
@@ -130,6 +130,20 @@ export async function currentFeeInStroops(paymentAmount: number) {
   const currentBaseFeeInStroops = await currentBaseFee()
 
   return String(round((percentFee * stroopsInLumen) + currentBaseFeeInStroops))
+}
+
+export async function currentFeeInStroopsMultiOperations(paymentAmount: number) {
+  const mostRecentLedger = await server.ledgers().order('desc').call()
+  const currentTransactionPercent = (mostRecentLedger.records[0].base_percentage_fee || 0) / 10000
+  const percentFee = round(paymentAmount * currentTransactionPercent, 8)
+  const currentBaseFeeInStroops = await currentBaseFee()
+  const baseFeeForTwoTransactions = currentBaseFeeInStroops * 2
+
+  return String(round((percentFee * stroopsInLumen) + baseFeeForTwoTransactions))
+}
+export async function currentFeeMultiOp(paymentAmount: number) {
+  const stroops = await currentFeeInStroopsMultiOperations(paymentAmount)
+  return Number(stroops) / stroopsInLumen
 }
 
 export async function currentFee(paymentAmount: number) {

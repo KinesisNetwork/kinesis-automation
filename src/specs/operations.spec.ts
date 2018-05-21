@@ -1,11 +1,15 @@
+import { expect } from 'chai'
 import * as network from '../services/network'
 describe('multiple operations', function () {
   this.timeout(20000)
 
-  it.only('Balances are created successfully when a transaction is made to two accounts', async () => {
+  it.only('Correct fees are applied when a transaction is made with operations to two accounts', async () => {
     const accountOne = network.getNewKeypair()
     const accountTwo = network.getNewKeypair()
     const transactionAmount = 100
+    const baseFee = Number(await network.currentFeeMultiOp(transactionAmount * 2))
+
+    const initialRootBalance = await network.getAccountBalance(network.rootPublic)
 
     await network.transferFundsToMultipleAccount(
         network.rootPublic,
@@ -16,17 +20,9 @@ describe('multiple operations', function () {
         true
     )
 
-    const newAccountBalanceAfterTransfer = await network.getAccountBalance(accountTwo.publicKey())
-    console.log(newAccountBalanceAfterTransfer)
+    const rootAccountBalanceAfterTransactions = await network.getAccountBalance(network.rootPublic)
+    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFee - (transactionAmount * 2)
 
-    await network.transferFundsToMultipleAccount(
-        network.rootPublic,
-        network.rootSecret,
-        accountOne.publicKey(),
-        accountTwo.publicKey(),
-        transactionAmount,
-        false
-    )
-
+    expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
 })
 })
