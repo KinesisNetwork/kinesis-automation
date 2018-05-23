@@ -169,6 +169,10 @@ export async function processInflation(sourcePublicKey: string, sourcePrivateKey
   return server.submitTransaction(transaction)
 }
 
+export async function mergeAccount() {
+    return StellarSdk.Operation.accountMerge
+}
+
 export function readSdkError(e) {
   return e.data.extras.result_codes
 }
