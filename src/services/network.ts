@@ -169,8 +169,18 @@ export async function processInflation(sourcePublicKey: string, sourcePrivateKey
   return server.submitTransaction(transaction)
 }
 
-export async function mergeAccount() {
-    return StellarSdk.Operation.accountMerge
+export async function mergeAccount(sourcePublicKey: string, sourcePrivateKey: string, destinationKeypair: string, fee: string) {
+  const account = await server.loadAccount(sourcePublicKey)
+  const mergeAccountOperation = StellarSdk.Operation.accountMerge({destination: destinationKeypair})
+
+  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+
+  let transaction = new StellarSdk.TransactionBuilder(account, {fee})
+  .addOperation(mergeAccountOperation)
+  .build()
+
+  transaction.sign(sourceKeypair)
+  return server.submitTransaction(transaction)
 }
 
 export function readSdkError(e) {

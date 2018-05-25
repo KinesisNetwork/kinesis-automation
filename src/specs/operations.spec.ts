@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import * as network from '../services/network'
 describe('multiple operations', function () {
-  this.timeout(20000)
+  this.timeout(40000)
 
   it('Correct fees are applied when a create transaction is made with operations to two accounts', async () => {
     const accountOne = network.getNewKeypair()
@@ -57,22 +57,50 @@ describe('multiple operations', function () {
     expect(Math.round(rootAccountBalanceAfterTransactions)).to.eql(Math.round(expectedAccountBalanceAfterTransactions))
 })
   it.only('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
-      const rootAccount = network.rootPublic
-      const rootAccountBalance = await network.getAccountBalance(rootAccount)
+      const lowBalanceAccount = network.getNewKeypair()
       const destinationAccount = network.getNewKeypair()
-      const transferAmount = rootAccountBalance + 100
+      const transferAmount = 50
+      const baseFee = await network.currentBaseFeeString()
 
-      console.log(transferAmount)
-      if (transferAmount > rootAccountBalance) {
-          network.mergeAccount
-      } else {
-        await network.transferFunds(
-            network.rootPublic,
-            network.rootSecret,
-            destinationAccount.publicKey(),
-            transferAmount,
-            true
-        )
-    }
+      await network.transferFunds(
+        network.rootPublic,
+        network.rootSecret,
+        lowBalanceAccount.publicKey(),
+        transferAmount,
+        true
+      )
+      console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
+
+      await network.transferFunds(
+          network.rootPublic,
+          network.rootSecret,
+          destinationAccount.publicKey(),
+          transferAmount,
+          true
+      )
+      await network.transferFunds(
+        network.rootPublic,
+        network.rootSecret,
+        destinationAccount.publicKey(),
+        transferAmount,
+        false
+    )
+      console.log(await network.getAccountBalance(destinationAccount.publicKey()))
+
+      try {
+          await network.transferFunds(
+              lowBalanceAccount.publicKey(),
+              lowBalanceAccount.secret(),
+              destinationAccount.publicKey(),
+              transferAmount,
+              false
+          )
+          throw new Error('Wrong Error')
+        } catch (e) {
+            console.log(e.data.extras.result_codes)
+            // expect(e.data.extras.result_codes.operations[0]).to.eql('op_underfunded')
+        }
+      await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
+            // await network.mergeAccount(destinationAccount.publicKey())
   })
 })

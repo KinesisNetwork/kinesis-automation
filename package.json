@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "lint": "tslint 'src/**/*.ts'",
+    "lint-fix": "tslint 'src/**/*.ts' --fix",
     "compile": "npm run lint && rm -rf dist/* && tsc",
     "test": "npm run compile && mocha dist/**/*.spec.js"
   },
