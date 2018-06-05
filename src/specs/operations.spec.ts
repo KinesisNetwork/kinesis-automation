@@ -101,6 +101,5 @@ describe('multiple operations', function () {
     }
 
     await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
-    // await network.mergeAccount(destinationAccount.publicKey())
   })
 })
