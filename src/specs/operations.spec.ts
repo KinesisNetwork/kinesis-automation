@@ -56,7 +56,7 @@ describe('multiple operations', function () {
 
     expect(Math.round(rootAccountBalanceAfterTransactions)).to.eql(Math.round(expectedAccountBalanceAfterTransactions))
   })
-  it.only('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
+  it('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
     const lowBalanceAccount = network.getNewKeypair()
     const destinationAccount = network.getNewKeypair()
     const transferAmount = 50

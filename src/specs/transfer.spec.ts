@@ -10,7 +10,6 @@ describe('Transfer', function () {
     const newAccount = network.getNewKeypair()
     const payableFee = await network.currentFee(transactionAmount)
 
-    // Activate account
     await network.transferFunds(
       network.rootPublic,
       network.rootSecret,
