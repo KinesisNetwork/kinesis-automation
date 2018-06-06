@@ -69,7 +69,6 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
-    console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
 
     await network.transferFunds(
       network.rootPublic,
@@ -85,7 +84,6 @@ describe('multiple operations', function () {
       transferAmount,
       false
     )
-    console.log(await network.getAccountBalance(destinationAccount.publicKey()))
 
     try {
       await network.transferFunds(
