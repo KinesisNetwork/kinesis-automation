@@ -1,21 +1,19 @@
 import { expect } from 'chai'
 import * as network from '../services/network'
 describe('multiple operations', function () {
-  this.timeout(40000)
+  this.timeout(100000)
 
-  it('Correct fees are applied when a create transaction is made with operations to two accounts', async () => {
-    const accountOne = network.getNewKeypair()
-    const accountTwo = network.getNewKeypair()
+  it('Correct fees are applied when a create transaction is made with operations to multiple accounts', async () => {
+    const accounts = [network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey()]
     const transactionAmount = 100
-    const baseFee = Number(await network.currentFeeMultiOp(transactionAmount * 2))
+    const baseFee = Number(await network.currentFeeMultiOp(transactionAmount, accounts))
 
     const initialRootBalance = await network.getAccountBalance(network.rootPublic)
 
     await network.transferFundsToMultipleAccount(
       network.rootPublic,
       network.rootSecret,
-      accountOne.publicKey(),
-      accountTwo.publicKey(),
+      accounts,
       transactionAmount,
       true
     )
@@ -26,36 +24,36 @@ describe('multiple operations', function () {
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
 
-  it('Correct fees are applied when a transfer transaction is made with operations to two accounts', async () => {
-    const accountOne = network.getNewKeypair()
-    const accountTwo = network.getNewKeypair()
+  it.only('Correct fees are applied when a transfer transaction is made with operations to multiple accounts', async () => {
+    const accounts = [network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey()]
     const transactionAmount = 100
-    const baseFee = Number(await network.currentFeeMultiOp(transactionAmount * 4))
+    const baseFee = Number(await network.currentFeeMultiOp(transactionAmount, accounts))
+    const baseFeeTransfer = baseFee * 2
 
     const initialRootBalance = await network.getAccountBalance(network.rootPublic)
 
     await network.transferFundsToMultipleAccount(
       network.rootPublic,
       network.rootSecret,
-      accountOne.publicKey(),
-      accountTwo.publicKey(),
+      accounts,
       transactionAmount,
       true
     )
+
     await network.transferFundsToMultipleAccount(
       network.rootPublic,
       network.rootSecret,
-      accountOne.publicKey(),
-      accountTwo.publicKey(),
+      accounts,
       transactionAmount,
       false
     )
 
     const rootAccountBalanceAfterTransactions = await network.getAccountBalance(network.rootPublic)
-    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFee - (transactionAmount * 4)
+    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFeeTransfer - (transactionAmount * accounts.length * 2)
 
-    expect(Math.round(rootAccountBalanceAfterTransactions)).to.eql(Math.round(expectedAccountBalanceAfterTransactions))
+    expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
+
   it('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
     const lowBalanceAccount = network.getNewKeypair()
     const destinationAccount = network.getNewKeypair()
@@ -77,13 +75,6 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
-    await network.transferFunds(
-      network.rootPublic,
-      network.rootSecret,
-      destinationAccount.publicKey(),
-      transferAmount,
-      false
-    )
 
     try {
       await network.transferFunds(
@@ -99,5 +90,11 @@ describe('multiple operations', function () {
     }
 
     await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
+
+    try {
+      console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
+    } catch (e) {
+      expect(e.message.status).to.eql(404)
+    }
   })
 })
