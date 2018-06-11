@@ -183,61 +183,22 @@ export interface MultiSigOptions {
   thresholdWeights: StellarSdk.Operation.SetOptionsOptions
 }
 
-// export async function getgAccountToUpdate(sourcePublicKey: StellarSdk.Keypair): Promise<Account> {
-//   const account = await server.loadAccount(sourcePublicKey.publicKey())
-//   return new StellarSdk.Account(sourcePublicKey.publicKey(), account.sequence)
-// }
-
-async function getMultiSigWeights(): Promise<Operation.SetOptionsOptions> {
-  const questions: Question[] = [
-    {
-      message: 'What will the master key weight be',
-      name: 'masterWeight',
-    },
-    {
-      message: 'What will the low threshold security be?',
-      name: 'lowThreshold',
-    },
-    {
-      message: 'What will the medium threshold (eg payments) security be?',
-      name: 'medThreshold',
-    },
-    {
-      message: 'What will the high threshold (eg update signers) security be?',
-      name: 'highThreshold',
-    },
-  ]
-  const { masterWeight, lowThreshold, medThreshold, highThreshold } = await prompt(questions)
-  return {
-    highThreshold,
-    lowThreshold,
-    masterWeight,
-    medThreshold,
-  }
-}
-
-async function getSigners(): Promise<StellarSdk.Operation.SetOptionsOptions[]> {
-  const signers = []
-  while (true) {
-    const newSignerOption = await getNewSigner()
-    signers.push(newSignerOption)
-    if (!(await isAddingMoreSigners())) {
-      break
-    }
-  }
-  return signers
-}
-
-export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string, configFile?: string): Promise<void> {
+export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string): Promise<void> {
   const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
   const account = await server.loadAccount(sourcePublicKey)
   const transfer = 100
   const baseFee = await currentFeeInStroops(transfer)
 
   const transaction = new StellarSdk.TransactionBuilder(account, {fee: baseFee})
+  const signers = []
+  const thresholdWeights = []
 
-  const { signers, thresholdWeights } = configFile
-    ? parseConfigFile(configFile)
-    : await promptForOptions()
+  // const signerAndWeights = signers.map((value) => {
 
+  // }
+
+  for (let signer of signers) {
+    transaction.addOperation(StellarSdk.Operation.setOptions(signer))
+    transaction.addOperation(StellarSdk.Operation.setOptions(signer))
+  }
 }
