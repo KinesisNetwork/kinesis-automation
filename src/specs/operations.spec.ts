@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import * as network from '../services/network'
 describe('multiple operations', function () {
-  this.timeout(100000)
+  this.timeout(60000)
 
   it('Correct fees are applied when a create transaction is made with operations to multiple accounts', async () => {
     const accounts = [network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey()]
