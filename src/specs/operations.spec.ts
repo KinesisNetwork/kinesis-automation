@@ -24,7 +24,7 @@ describe('multiple operations', function () {
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
 
-  it.only('Correct fees are applied when a transfer transaction is made with operations to multiple accounts', async () => {
+  it('Correct fees are applied when a transfer transaction is made with operations to multiple accounts', async () => {
     const accounts = [network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey()]
     const transactionAmount = 100
     const baseFee = Number(await network.currentFeeMultiOp(transactionAmount, accounts))
