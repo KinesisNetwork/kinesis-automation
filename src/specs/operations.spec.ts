@@ -24,7 +24,7 @@ describe('multiple operations', function () {
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
 
-  it.only('Correct fees are applied when a transfer transaction is made with operations to multiple accounts', async () => {
+  it('Correct fees are applied when a transfer transaction is made with operations to multiple accounts', async () => {
     const accounts = [network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey(), network.getNewKeypair().publicKey()]
     const transactionAmount = 100
     const baseFee = Number(await network.currentFeeMultiOp(transactionAmount, accounts))
@@ -54,7 +54,7 @@ describe('multiple operations', function () {
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
 
-  it('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
+  it.only('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
     const lowBalanceAccount = network.getNewKeypair()
     const destinationAccount = network.getNewKeypair()
     const transferAmount = 50
@@ -75,6 +75,7 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
+    console.log(network.getAccountBalance(destinationAccount.publicKey()))
 
     try {
       await network.transferFunds(
@@ -85,16 +86,18 @@ describe('multiple operations', function () {
         false
       )
       throw new Error('Wrong Error')
-    } catch (e) {
-      expect(e.data.extras.result_codes.operations[0]).to.eql('op_underfunded')
-    }
+     } catch (e) {
+       expect(e.data.extras.result_codes.operations[0]).to.eql('op_underfunded')
+     }
 
     await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
+    // const DestinationAccountBal = network.getAccountBalance(destinationAccount.publicKey())
+    // expect(DestinationAccountBal).to.eql(transferAmount)
 
-    try {
-      console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
-    } catch (e) {
-      expect(e.message.status).to.eql(404)
-    }
+    // try {
+    //  console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
+    // } catch (e) {
+    //  expect(e.message.status).to.eql(404)
+    // }
   })
 })

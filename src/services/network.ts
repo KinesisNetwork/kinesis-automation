@@ -184,12 +184,12 @@ export interface MultiSigOptions {
 }
 
 export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string): Promise<void> {
-  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
-  const account = await server.loadAccount(sourcePublicKey)
+  const sourcePrivateKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+  const accountToAddMultiSig = await server.loadAccount(sourcePublicKey)
   const transfer = 100
   const baseFee = await currentFeeInStroops(transfer)
 
-  const transaction = new StellarSdk.TransactionBuilder(account, {fee: baseFee})
+  const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, {fee: baseFee})
   const signers = []
   const thresholdWeights = []
 
@@ -198,7 +198,18 @@ export async function setupMultiSignatureForAccount(sourcePrivateKey: string, so
   // }
 
   for (let signer of signers) {
+    for (let thresholdWeight of thresholdWeights) {
     transaction.addOperation(StellarSdk.Operation.setOptions(signer))
-    transaction.addOperation(StellarSdk.Operation.setOptions(signer))
+    transaction.addOperation(StellarSdk.Operation.setOptions(thresholdWeight))
+  }
+}
+  const envelope = transaction.build()
+  envelope.sign(sourcePrivateKeypair)
+
+  try {
+    await server.submitTransaction(envelope)
+  } catch (e) {
+    const opCode = e.data.extra.result_codes
+    throw new Error(opCode)
   }
 }

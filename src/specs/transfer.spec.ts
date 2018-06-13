@@ -84,8 +84,6 @@ describe('Transfer', function () {
     expect(tx.fee_paid).to.eql(payableFee * 10000000)
     expect(tx.operations.length).to.eql(1)
     const targetOp = tx.operations[0]
-    console.log(targetOp)
-    console.log(targetOp.starting_balance)
 
     expect(targetOp.starting_balance).to.eql(transactionAmount.toFixed(7))
   })
