@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { round } from 'lodash'
 import * as network from '../services/network'
 describe('multiple operations', function () {
   this.timeout(100000)
@@ -54,11 +55,12 @@ describe('multiple operations', function () {
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
 
-  it('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
+  it.only('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
     const lowBalanceAccount = network.getNewKeypair()
     const destinationAccount = network.getNewKeypair()
     const transferAmount = 50
     const baseFee = await network.currentBaseFeeString()
+    const baseFeeTransfer = await network.currentFee(transferAmount)
 
     await network.transferFunds(
       network.rootPublic,
@@ -67,6 +69,7 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
+    const lowAccountBal = await network.getAccountBalance(lowBalanceAccount.publicKey())
 
     await network.transferFunds(
       network.rootPublic,
@@ -75,6 +78,7 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
+    const destinationAccountBal = await network.getAccountBalance(destinationAccount.publicKey())
 
     try {
       await network.transferFunds(
@@ -90,6 +94,13 @@ describe('multiple operations', function () {
     }
 
     await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
+
+    const balAfterMerge = await network.getAccountBalance(destinationAccount.publicKey())
+    const roundedBalAfterMerge = round(balAfterMerge, 4)
+
+    const expectedBalAfterMerge = round(destinationAccountBal + lowAccountBal - baseFeeTransfer, 4)
+
+    expect(roundedBalAfterMerge).to.eql(expectedBalAfterMerge)
 
     try {
       console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
