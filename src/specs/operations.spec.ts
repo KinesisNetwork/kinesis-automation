@@ -19,8 +19,8 @@ describe('multiple operations', function () {
       true
     )
 
-    const rootAccountBalanceAfterTransactions = await network.getAccountBalance(network.rootPublic)
-    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFee - (transactionAmount * 2)
+    const rootAccountBalanceAfterTransactions = round(await network.getAccountBalance(network.rootPublic), 4)
+    const expectedAccountBalanceAfterTransactions = round(initialRootBalance - baseFee - (transactionAmount * accounts.length), 4)
 
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
@@ -49,8 +49,8 @@ describe('multiple operations', function () {
       false
     )
 
-    const rootAccountBalanceAfterTransactions = await network.getAccountBalance(network.rootPublic)
-    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFeeTransfer - (transactionAmount * accounts.length * 2)
+    const rootAccountBalanceAfterTransactions = round(await network.getAccountBalance(network.rootPublic), 4)
+    const expectedAccountBalanceAfterTransactions = round(initialRootBalance - baseFeeTransfer - (transactionAmount * accounts.length * 2), 4)
 
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
