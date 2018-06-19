@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import { round } from 'lodash'
 import * as network from '../services/network'
 describe('multiple operations', function () {
   this.timeout(60000)
@@ -18,8 +19,8 @@ describe('multiple operations', function () {
       true
     )
 
-    const rootAccountBalanceAfterTransactions = await network.getAccountBalance(network.rootPublic)
-    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFee - (transactionAmount * 2)
+    const rootAccountBalanceAfterTransactions = round(await network.getAccountBalance(network.rootPublic), 4)
+    const expectedAccountBalanceAfterTransactions = round(initialRootBalance - baseFee - (transactionAmount * accounts.length), 4)
 
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
@@ -48,8 +49,8 @@ describe('multiple operations', function () {
       false
     )
 
-    const rootAccountBalanceAfterTransactions = await network.getAccountBalance(network.rootPublic)
-    const expectedAccountBalanceAfterTransactions = initialRootBalance - baseFeeTransfer - (transactionAmount * accounts.length * 2)
+    const rootAccountBalanceAfterTransactions = round(await network.getAccountBalance(network.rootPublic), 4)
+    const expectedAccountBalanceAfterTransactions = round(initialRootBalance - baseFeeTransfer - (transactionAmount * accounts.length * 2), 4)
 
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
@@ -59,6 +60,7 @@ describe('multiple operations', function () {
     const destinationAccount = network.getNewKeypair()
     const transferAmount = 50
     const baseFee = await network.currentBaseFeeString()
+    const baseFeeTransfer = await network.currentFee(transferAmount)
 
     await network.transferFunds(
       network.rootPublic,
@@ -67,6 +69,7 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
+    const lowAccountBal = await network.getAccountBalance(lowBalanceAccount.publicKey())
 
     await network.transferFunds(
       network.rootPublic,
@@ -75,7 +78,7 @@ describe('multiple operations', function () {
       transferAmount,
       true
     )
-    console.log(network.getAccountBalance(destinationAccount.publicKey()))
+    const destinationAccountBal = await network.getAccountBalance(destinationAccount.publicKey())
 
     try {
       await network.transferFunds(
@@ -94,10 +97,17 @@ describe('multiple operations', function () {
     // const DestinationAccountBal = network.getAccountBalance(destinationAccount.publicKey())
     // expect(DestinationAccountBal).to.eql(transferAmount)
 
-    // try {
-    //  console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
-    // } catch (e) {
-    //  expect(e.message.status).to.eql(404)
-    // }
+    const balAfterMerge = await network.getAccountBalance(destinationAccount.publicKey())
+    const roundedBalAfterMerge = round(balAfterMerge, 4)
+
+    const expectedBalAfterMerge = round(destinationAccountBal + lowAccountBal - baseFeeTransfer, 4)
+
+    expect(roundedBalAfterMerge).to.eql(expectedBalAfterMerge)
+
+    try {
+      console.log(await network.getAccountBalance(lowBalanceAccount.publicKey()))
+    } catch (e) {
+      expect(e.message.status).to.eql(404)
+    }
   })
 })

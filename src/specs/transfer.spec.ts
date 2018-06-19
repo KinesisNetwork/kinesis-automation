@@ -1,9 +1,11 @@
 import { expect } from 'chai'
 import * as network from '../services/network'
+import { sleep } from '../services/helpers'
 import { round } from 'lodash'
+import { CreateAccountOperationRecord } from 'js-kinesis-sdk'
 
 describe('Transfer', function () {
-  this.timeout(20000)
+  this.timeout(30000)
 
   it('Balances are updated correctly when transferring to an existing account', async () => {
     const transactionAmount = 100
@@ -28,13 +30,14 @@ describe('Transfer', function () {
       transactionAmount,
       false
     )
-    const rootAccountBalanceAfterTransfer = await network.getAccountBalance(network.rootPublic)
-    const newAccountBalanceAfterTransfer = await network.getAccountBalance(newAccount.publicKey())
 
-    const expectedEndRootBalance = rootAccountBalance - transactionAmount - payableFee
+    const rootAccountBalanceAfterTransfer = round(await network.getAccountBalance(network.rootPublic), 4)
+
+    const newAccountBalanceAfterTransfer = await network.getAccountBalance(newAccount.publicKey())
+    const expectedEndRootBalance = round((rootAccountBalance - transactionAmount - payableFee), 4)
     const expectedEndNewAccountBalance = newAccountBalance + transactionAmount
 
-    expect(round(rootAccountBalanceAfterTransfer, 2)).to.eql(round(expectedEndRootBalance, 2))
+    expect(rootAccountBalanceAfterTransfer).to.eql(expectedEndRootBalance)
     expect(newAccountBalanceAfterTransfer).to.eql(expectedEndNewAccountBalance)
   })
 
@@ -69,9 +72,8 @@ describe('Transfer', function () {
   it('verify "transfer" operation amount', async () => {
     const newAccount = network.getNewKeypair()
     const transactionAmount = 100
-    const payableFee = await network.currentFee(transactionAmount)
 
-    await network.transferFunds(
+    const tx = await network.transferFunds(
       network.rootPublic,
       network.rootSecret,
       newAccount.publicKey(),
@@ -79,11 +81,11 @@ describe('Transfer', function () {
       true
     )
 
-    const tx = (await network.getMostRecentTransactions())[0]
+    // SDK / Horizon Bug. Sporadically fails without this wait,
+    await sleep(1000)
 
-    expect(tx.fee_paid).to.eql(payableFee * 10000000)
-    expect(tx.operations.length).to.eql(1)
-    const targetOp = tx.operations[0]
+    const { records: operations } = await tx.operations()
+    const targetOp = operations[0] as CreateAccountOperationRecord
 
     expect(targetOp.starting_balance).to.eql(transactionAmount.toFixed(7))
   })
