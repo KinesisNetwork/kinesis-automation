@@ -1,5 +1,5 @@
 import * as StellarSdk from 'js-kinesis-sdk'
-import { find, round } from 'lodash'
+import { find } from 'lodash'
 
 export const rootPublic = 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H'
 export const rootSecret = 'SDHOAMBNLGCE2MV5ZKIVZAQD3VCLGP53P3OBSBI6UN5L5XZI5TKHFQL4'
@@ -21,7 +21,7 @@ export async function transferFunds(
   destinationPublicKey: string,
   amount: number,
   newAccount = false,
-  fee?: string
+  fee?: number
 ) {
   const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
 
@@ -42,62 +42,75 @@ export async function transferFunds(
     startingBalance: amount.toFixed(7)
   })
 
-  let transaction = new StellarSdk.TransactionBuilder(account, {fee: fee})
+  let transaction = new StellarSdk.TransactionBuilder(account, { fee: (fee).toString() })
     .addOperation(newAccount ? createAccountOperation : paymentOperation)
     .build()
 
   transaction.sign(sourceKeypair)
 
-  return server.submitTransaction(transaction)
+  const receipt = await server.submitTransaction(transaction)
+  return waitForTransaction(receipt.hash)
+}
+
+async function waitForTransaction(
+  transactionId: string,
+  counter: number = 0,
+  results: boolean[] = [false, false, false]
+): Promise<StellarSdk.TransactionRecord> {
+  // Know that there are three nodes for propagation
+  // Need to wait for each node to have the transaction
+  counter += 1
+  try {
+    const successfulTransaction = await getTransaction(transactionId)
+    const nodeIndex = counter % 3
+    results[nodeIndex] = true
+    if (results.every((result) => result)) {
+      return successfulTransaction
+    } else {
+      return waitForTransaction(transactionId, counter, results)
+    }
+  } catch (e) {
+    return waitForTransaction(transactionId, counter, results)
+  }
 }
 
 export async function transferFundsToMultipleAccount(
   sourcePublicKey: string,
   sourcePrivateKey: string,
-  destinationPublicKeyOne: string,
-  destinationPublicKeyTwo: string,
+  destinationPublicKey: string[],
   amount: number,
   newAccount = false,
-  fee?: string
+  fee?: number
 ) {
   const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
 
   const account = await server.loadAccount(sourcePublicKey)
 
   if (!fee) {
-    fee = await currentFeeInStroops(amount)
+    fee = await currentFeeInStroopsMultiOperations(amount, destinationPublicKey)
   }
-  const paymentOperationOne = StellarSdk.Operation.payment({
-    destination: destinationPublicKeyOne,
-    asset: StellarSdk.Asset.native(),
-    amount: amount.toFixed(7),
-  })
-  const paymentOperationTwo = StellarSdk.Operation.payment({
-    destination: destinationPublicKeyTwo,
-    asset: StellarSdk.Asset.native(),
-    amount: amount.toFixed(7)
-  })
 
-  const createAccountOperationOne = StellarSdk.Operation.createAccount({
-    destination: destinationPublicKeyOne,
-    startingBalance: amount.toFixed(7)
+  const operations = destinationPublicKey.map((value) => {
+    const paymentOperation = StellarSdk.Operation.payment({
+      destination: value,
+      asset: StellarSdk.Asset.native(),
+      amount: amount.toFixed(7)
+    })
+    const createAccountOperation = StellarSdk.Operation.createAccount({
+      destination: value,
+      startingBalance: amount.toFixed(7)
+    })
+    return newAccount ? createAccountOperation : paymentOperation
   })
 
-  const createAccountOperationTwo = StellarSdk.Operation.createAccount({
-    destination: destinationPublicKeyTwo,
-    startingBalance: amount.toFixed(7)
-  })
+  let transaction = new StellarSdk.TransactionBuilder(account, { fee: String(fee) })
 
-  let transaction = new StellarSdk.TransactionBuilder(account, {fee: fee})
-  .addOperation(newAccount ? createAccountOperationOne : paymentOperationOne )
-  .addOperation(newAccount ? createAccountOperationTwo : paymentOperationTwo)
-  .build()
-
-  console.log(transaction)
-
-  transaction.sign(sourceKeypair)
-
-  return server.submitTransaction(transaction)
+  for (let Operation of operations) {
+    transaction.addOperation(Operation)
+  }
+  let buildTransaction = transaction.build()
+  buildTransaction.sign(sourceKeypair)
+  return server.submitTransaction(buildTransaction)
 }
 
 export async function getMostRecentTransactions(limit = 1): Promise<any[]> {
@@ -114,6 +127,11 @@ export async function getMostRecentTransactions(limit = 1): Promise<any[]> {
   return txRecords
 }
 
+export async function getTransaction(TransactionId: string) {
+  const tx: StellarSdk.TransactionRecord = await server.transactions().transaction(TransactionId).call() as any
+  return tx
+}
+
 export function getNewKeypair() {
   return StellarSdk.Keypair.random()
 }
@@ -125,16 +143,32 @@ export async function currentBaseFee() {
 
 export async function currentFeeInStroops(paymentAmount: number) {
   const mostRecentLedger = await server.ledgers().order('desc').call()
-  const currentTransactionPercent = (mostRecentLedger.records[0].base_percentage_fee || 0) / 10000
-  const percentFee = round(paymentAmount * currentTransactionPercent, 8)
+  const currentTransactionPercent = (mostRecentLedger.records[0].base_percentage_fee || 0)
+  const percentFee = paymentAmount / 10000 * currentTransactionPercent
   const currentBaseFeeInStroops = await currentBaseFee()
 
-  return String(round((percentFee * stroopsInLumen) + currentBaseFeeInStroops))
+  return percentFee * stroopsInLumen + currentBaseFeeInStroops
+}
+
+export async function currentFeeInStroopsMultiOperations(paymentAmount: number, destinationAccounts: string[]) {
+  const numberOfBaseFeesToApply = destinationAccounts.length
+  const mostRecentLedger = await server.ledgers().order('desc').call()
+  const currentTransactionPercent = (mostRecentLedger.records[0].base_percentage_fee || 0)
+  const percentFee = paymentAmount / 10000 * currentTransactionPercent
+  const currentBaseFeeInStroops = await currentBaseFee()
+  const allBaseFeesInStroops = currentBaseFeeInStroops * numberOfBaseFeesToApply
+
+  return (percentFee * numberOfBaseFeesToApply) * stroopsInLumen + allBaseFeesInStroops
+}
+
+export async function currentFeeMultiOp(paymentAmount: number, destinationAccount: string[]) {
+  const fee = await currentFeeInStroopsMultiOperations(paymentAmount, destinationAccount)
+  return fee / stroopsInLumen
 }
 
 export async function currentFee(paymentAmount: number) {
-  const stroops = await currentFeeInStroops(paymentAmount)
-  return Number(stroops) / stroopsInLumen
+  const fee = await currentFeeInStroops(paymentAmount)
+  return fee / stroopsInLumen
 }
 
 export async function currentBaseFeeString() {
@@ -147,9 +181,23 @@ export async function processInflation(sourcePublicKey: string, sourcePrivateKey
   const addInflation = StellarSdk.Operation.inflation({})
   const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
 
-  let transaction = new StellarSdk.TransactionBuilder(account, {fee})
-  .addOperation(addInflation)
-  .build()
+  let transaction = new StellarSdk.TransactionBuilder(account, { fee })
+    .addOperation(addInflation)
+    .build()
+
+  transaction.sign(sourceKeypair)
+  return server.submitTransaction(transaction)
+}
+
+export async function mergeAccount(sourcePublicKey: string, sourcePrivateKey: string, destinationKeypair: string, fee: string) {
+  const account = await server.loadAccount(sourcePublicKey)
+  const mergeAccountOperation = StellarSdk.Operation.accountMerge({ destination: destinationKeypair })
+
+  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+
+  let transaction = new StellarSdk.TransactionBuilder(account, { fee })
+    .addOperation(mergeAccountOperation)
+    .build()
 
   transaction.sign(sourceKeypair)
   return server.submitTransaction(transaction)

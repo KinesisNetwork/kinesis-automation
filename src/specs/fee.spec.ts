@@ -1,6 +1,6 @@
- import { expect } from 'chai'
- import * as network from '../services/network'
- describe('Fees', function () {
+import { expect } from 'chai'
+import * as network from '../services/network'
+describe('Fees', function () {
   this.timeout(50000)
 
   it('The network rejects "create_account" operations if the fee is too low', async () => {
@@ -8,7 +8,7 @@
     const transactionAmount = 50
 
     const requiredFee = await network.currentFeeInStroops(transactionAmount)
-    const lowFee = String(Number(requiredFee) - 10)
+    const lowFee = requiredFee - 10
 
     try {
       await network.transferFunds(
@@ -22,7 +22,6 @@
 
       throw new Error('Wrong Error')
     } catch (e) {
-      console.log(e.data.extras.result_codes)
       expect(e.data.extras.result_codes.transaction).to.eql('tx_insufficient_fee')
     }
   })
@@ -32,7 +31,7 @@
     const transactionAmount = 50
 
     const requiredFee = await network.currentFeeInStroops(transactionAmount)
-    const lowFee = String(Number(requiredFee) - 10)
+    const lowFee = requiredFee - 10
 
     try {
       await network.transferFunds(
@@ -41,7 +40,7 @@
         newAccount.publicKey(),
         transactionAmount,
         true,
-    )
+      )
       await network.transferFunds(
         newAccount.publicKey(),
         newAccount.secret(),
@@ -53,7 +52,6 @@
 
       throw new Error('Wrong Error')
     } catch (e) {
-      console.log(e.data.extras.result_codes)
       expect(e.data.extras.result_codes.transaction).to.eql('tx_insufficient_fee')
     }
   })
@@ -63,7 +61,7 @@
     const transactionAmount = 50
 
     const requiredFee = await network.currentFeeInStroops(transactionAmount)
-    const highFee = String(Number(requiredFee) + 10)
+    const highFee = requiredFee + 10
 
     await network.transferFunds(
       network.rootPublic,
@@ -80,7 +78,7 @@
     const transactionAmount = 50
 
     const requiredFee = await network.currentFeeInStroops(transactionAmount)
-    const highFee = String(Number(requiredFee) + 10)
+    const highFee = requiredFee + 10
 
     await network.transferFunds(
       network.rootPublic,
@@ -88,7 +86,7 @@
       newAccount.publicKey(),
       transactionAmount,
       true,
-  )
+    )
     await network.transferFunds(
       newAccount.publicKey(),
       newAccount.secret(),
