@@ -1,5 +1,7 @@
 import { expect } from 'chai'
 import * as network from '../services/network'
+import { round } from 'lodash'
+
 describe('Create Account', function () {
   this.timeout(20000)
 
@@ -8,7 +10,7 @@ describe('Create Account', function () {
     const transactionAmount = 100
     const payableFee = await network.currentFee(transactionAmount)
 
-    const expectedEndRootAccountBalance = rootAccountBalance - transactionAmount - payableFee
+    const expectedEndRootAccountBalance = round(rootAccountBalance - transactionAmount - payableFee, 4)
 
     const newAccount = network.getNewKeypair()
 
@@ -20,7 +22,7 @@ describe('Create Account', function () {
       true
     )
 
-    const rootAccountBalanceAfterTransfer = await network.getAccountBalance(network.rootPublic)
+    const rootAccountBalanceAfterTransfer = round(await network.getAccountBalance(network.rootPublic), 4)
     const newAccountBalance = await network.getAccountBalance(newAccount.publicKey())
 
     expect(rootAccountBalanceAfterTransfer).to.eql(expectedEndRootAccountBalance)

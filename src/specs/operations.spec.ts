@@ -55,7 +55,7 @@ describe('multiple operations', function () {
     expect(rootAccountBalanceAfterTransactions).to.eql(expectedAccountBalanceAfterTransactions)
   })
 
-  it.only('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
+  it('Account is deleted and remaining balance transferred to destination account if account doesnt have enough funds', async () => {
     const lowBalanceAccount = network.getNewKeypair()
     const destinationAccount = network.getNewKeypair()
     const transferAmount = 50
@@ -94,8 +94,6 @@ describe('multiple operations', function () {
      }
 
     await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
-    // const DestinationAccountBal = network.getAccountBalance(destinationAccount.publicKey())
-    // expect(DestinationAccountBal).to.eql(transferAmount)
 
     const balAfterMerge = await network.getAccountBalance(destinationAccount.publicKey())
     const roundedBalAfterMerge = round(balAfterMerge, 4)

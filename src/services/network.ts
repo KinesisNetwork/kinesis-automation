@@ -212,26 +212,31 @@ export interface MultiSigOptions {
   thresholdWeights: StellarSdk.Operation.SetOptionsOptions
 }
 
+export interface MultiSigOptions {
+  signers: StellarSdk.Operation.SetOptionsOptions[]
+  thresholdWeights: StellarSdk.Operation.SetOptionsOptions
+}
+
 export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string): Promise<void> {
   const sourcePrivateKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
   const accountToAddMultiSig = await server.loadAccount(sourcePublicKey)
   const transfer = 100
   const baseFee = await currentFeeInStroops(transfer)
 
-  const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, {fee: baseFee})
-  const signers = []
-  const thresholdWeights = []
-
-  // const signerAndWeights = signers.map((value) => {
-
+  const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, {fee: String(baseFee)})
+  // const signaturesList = [{ed25519PublicKey: getNewKeypair().publicKey(), weight: 4}, {ed25519PublicKey: getNewKeypair().publicKey(), weight: 2},
+  //  {ed25519PublicKey: getNewKeypair().publicKey(), weight: 7}, {ed25519PublicKey: getNewKeypair().publicKey(), weight: 30}]
+  const publicKeyList =  [getNewKeypair().publicKey(), getNewKeypair().publicKey(), getNewKeypair().publicKey()]
+  const weightList =  [4 , 6 , 3]
+  // for (let val of signaturesList) {
+  //  transaction.addOperation(StellarSdk.Operation.setOptions({signer : {ed25519PublicKey: val[0] , weight : val[1]}}))
   // }
-
-  for (let signer of signers) {
-    for (let thresholdWeight of thresholdWeights) {
-    transaction.addOperation(StellarSdk.Operation.setOptions(signer))
-    transaction.addOperation(StellarSdk.Operation.setOptions(thresholdWeight))
+  for (let publicKey of publicKeyList) {
+    for (let weight of weightList) {
+      transaction.addOperation(StellarSdk.Operation.setOptions({signer: {ed25519PublicKey: publicKey, weight: weight}}))
+    }
   }
-}
+
   const envelope = transaction.build()
   envelope.sign(sourcePrivateKeypair)
 
