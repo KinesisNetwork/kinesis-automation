@@ -217,24 +217,18 @@ export interface MultiSigOptions {
   thresholdWeights: StellarSdk.Operation.SetOptionsOptions
 }
 
-export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string): Promise<void> {
+export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string, signatures: any[]): Promise<void> {
   const sourcePrivateKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
   const accountToAddMultiSig = await server.loadAccount(sourcePublicKey)
   const transfer = 100
   const baseFee = await currentFeeInStroops(transfer)
 
-  const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, {fee: String(baseFee)})
-  // const signaturesList = [{ed25519PublicKey: getNewKeypair().publicKey(), weight: 4}, {ed25519PublicKey: getNewKeypair().publicKey(), weight: 2},
-  //  {ed25519PublicKey: getNewKeypair().publicKey(), weight: 7}, {ed25519PublicKey: getNewKeypair().publicKey(), weight: 30}]
-  const publicKeyList =  [getNewKeypair().publicKey(), getNewKeypair().publicKey(), getNewKeypair().publicKey()]
-  const weightList =  [4 , 6 , 3]
-  // for (let val of signaturesList) {
-  //  transaction.addOperation(StellarSdk.Operation.setOptions({signer : {ed25519PublicKey: val[0] , weight : val[1]}}))
-  // }
-  for (let publicKey of publicKeyList) {
-    for (let weight of weightList) {
-      transaction.addOperation(StellarSdk.Operation.setOptions({signer: {ed25519PublicKey: publicKey, weight: weight}}))
-    }
+  const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, { fee: String(baseFee) })
+  // const signaturesList = [{ ed25519PublicKey: getNewKeypair().publicKey(), weight: 4 }, { ed25519PublicKey: getNewKeypair().publicKey(), weight: 2 },
+  // { ed25519PublicKey: getNewKeypair().publicKey(), weight: 7 }, { ed25519PublicKey: getNewKeypair().publicKey(), weight: 0 }]
+  for (let val of signatures) {
+    transaction.addOperation(StellarSdk.Operation.setOptions
+      ({ signer: { ed25519PublicKey: val.ed25519PublicKey, weight: val.weight } }))
   }
 
   const envelope = transaction.build()
@@ -243,6 +237,7 @@ export async function setupMultiSignatureForAccount(sourcePrivateKey: string, so
   try {
     await server.submitTransaction(envelope)
   } catch (e) {
+
     const opCode = e.data.extra.result_codes
     throw new Error(opCode)
   }
