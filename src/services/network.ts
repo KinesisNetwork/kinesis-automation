@@ -229,6 +229,8 @@ export async function setupMultiSignatureForAccount(sourcePrivateKey: string, so
   for (let val of signatures) {
     transaction.addOperation(StellarSdk.Operation.setOptions
       ({ signer: { ed25519PublicKey: val.ed25519PublicKey, weight: val.weight } }))
+    console.log(transaction.addOperation(StellarSdk.Operation.setOptions
+      ({ signer: { ed25519PublicKey: val.ed25519PublicKey, weight: val.weight } })))
   }
 
   const envelope = transaction.build()
