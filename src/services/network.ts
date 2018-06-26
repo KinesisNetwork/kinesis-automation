@@ -217,21 +217,32 @@ export interface MultiSigOptions {
   thresholdWeights: StellarSdk.Operation.SetOptionsOptions
 }
 
-export async function setupMultiSignatureForAccount(sourcePrivateKey: string, sourcePublicKey: string, signatures: any[]): Promise<void> {
+export async function setupMultiSignatureForAccount(
+  sourcePrivateKey: string,
+  sourcePublicKey: string,
+  addSignatures?: any[]): Promise<void> {
   const sourcePrivateKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
   const accountToAddMultiSig = await server.loadAccount(sourcePublicKey)
   const transfer = 100
   const baseFee = await currentFeeInStroops(transfer)
 
   const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, { fee: String(baseFee) })
-  // const signaturesList = [{ ed25519PublicKey: getNewKeypair().publicKey(), weight: 4 }, { ed25519PublicKey: getNewKeypair().publicKey(), weight: 2 },
-  // { ed25519PublicKey: getNewKeypair().publicKey(), weight: 7 }, { ed25519PublicKey: getNewKeypair().publicKey(), weight: 0 }]
-  for (let val of signatures) {
+
+  const signaturesList = [{ ed25519PublicKey: getNewKeypair().publicKey(), weight: 4 }, { ed25519PublicKey: getNewKeypair().publicKey(), weight: 2 },
+    { ed25519PublicKey: getNewKeypair().publicKey(), weight: 7 }, { ed25519PublicKey: getNewKeypair().publicKey(), weight: 21 }]
+
+  if (!addSignatures) {
+  for (let val of signaturesList) {
     transaction.addOperation(StellarSdk.Operation.setOptions
       ({ signer: { ed25519PublicKey: val.ed25519PublicKey, weight: val.weight } }))
-    console.log(transaction.addOperation(StellarSdk.Operation.setOptions
-      ({ signer: { ed25519PublicKey: val.ed25519PublicKey, weight: val.weight } })))
   }
+} else {
+  const newSignatureList = signaturesList.concat(addSignatures)
+  for (let val of newSignatureList) {
+    transaction.addOperation(StellarSdk.Operation.setOptions
+    ({ signer: { ed25519PublicKey: val.ed25519PublicKey, weight: val.weight } }))
+  }
+}
 
   const envelope = transaction.build()
   envelope.sign(sourcePrivateKeypair)
@@ -239,7 +250,6 @@ export async function setupMultiSignatureForAccount(sourcePrivateKey: string, so
   try {
     await server.submitTransaction(envelope)
   } catch (e) {
-
     const opCode = e.data.extra.result_codes
     throw new Error(opCode)
   }
