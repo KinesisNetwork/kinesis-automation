@@ -250,6 +250,7 @@ export async function setupMultiSignatureForAccount(
   try {
     await server.submitTransaction(envelope)
   } catch (e) {
+    console.log(e.extras.result_codes)
     const opCode = e.data.extra.result_codes
     throw new Error(opCode)
   }

@@ -4,7 +4,7 @@ import * as network from '../services/network'
 describe('Multisigniture', function () {
   this.timeout(20000)
 
-  it.only('Multiple signers can be added to an account, and the signing weight can be set\
+  it('Multiple signers can be added to an account, and the signing weight can be set\
   to require multiple signitures for a transaction evelope to submit to the network', async () => {
     const accountPrivateKey = network.rootSecret
     const accountPublicKey = network.rootPublic
@@ -19,15 +19,16 @@ describe('Multisigniture', function () {
     // const accountPrivateKey = network.rootSecret
   })
 
-  it('if the signing weight of the original private key is set to 0, it cannot submit any operations against the account', async () => {
-    //  const accountPublicKey = network.rootPublic
-    //  const accountPrivateKey = network.rootSecret
-    //  const signatures = [{ ed25519PublicKey: network.getNewKeypair().publicKey(), weight: 4 },
-    //  { ed25519PublicKey: network.getNewKeypair().publicKey(), weight: 2 },
-    //  { ed25519PublicKey: network.getNewKeypair().publicKey(), weight: 7 },
-    //  { ed25519PublicKey: network.getNewKeypair().publicKey(), weight: 10 }]
+  it.only('if the signing weight of the original private key is set to 0, it cannot submit any operations against the account', async () => {
+    const accountPrivateKey = network.rootSecret
+    const accountPublicKey = network.rootPublic
+    const signatures = [{ ed25519PublicKey: network.getNewKeypair().publicKey(), weight: 0 },
+    { ed25519PublicKey: network.getNewKeypair().publicKey(), weight: 11 }]
 
-    //  const setSignersToAccount = await network.setupMultiSignatureForAccount(accountPrivateKey, accountPublicKey, signatures)
-    //  console.log(setSignersToAccount)
+    // try {
+    await network.setupMultiSignatureForAccount(accountPrivateKey, accountPublicKey, signatures)
+    // } catch (e) {
+    //  console.log(e)
+    // }
   })
 })
