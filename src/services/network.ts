@@ -237,3 +237,28 @@ export async function setupMultiSignatureForAccount(
 
   return server.submitTransaction(envelope)
 }
+
+export async function setAccountThresholds(
+  signersPrivateKey: string,
+  masterPublicKey: string,
+  thresholdWeights: {
+    highThreshold: number,
+    medThreshold: number,
+    lowThreshold: number,
+    masterWeight: number
+  }
+): Promise<void> {
+
+  const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
+  const accountForWeights = await server.loadAccount(masterPublicKey)
+  const baseFee = await currentBaseFeeString()
+
+  const transaction = new StellarSdk.TransactionBuilder(accountForWeights, { fee: baseFee })
+
+  transaction.addOperation(StellarSdk.Operation.setOptions(thresholdWeights))
+
+  const envelope = transaction.build()
+  envelope.sign(signingKeypair)
+
+  return server.submitTransaction(envelope)
+}
