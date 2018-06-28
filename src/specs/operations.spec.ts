@@ -64,7 +64,7 @@ describe('multiple operations', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       lowBalanceAccount.publicKey(),
       transferAmount,
       true
@@ -73,7 +73,7 @@ describe('multiple operations', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       destinationAccount.publicKey(),
       transferAmount,
       true
@@ -83,15 +83,15 @@ describe('multiple operations', function () {
     try {
       await network.transferFunds(
         lowBalanceAccount.publicKey(),
-        lowBalanceAccount.secret(),
+        [lowBalanceAccount.secret()],
         destinationAccount.publicKey(),
         transferAmount,
         false
       )
       throw new Error('Wrong Error')
-     } catch (e) {
-       expect(e.data.extras.result_codes.operations[0]).to.eql('op_underfunded')
-     }
+    } catch (e) {
+      expect(e.data.extras.result_codes.operations[0]).to.eql('op_underfunded')
+    }
 
     await network.mergeAccount(lowBalanceAccount.publicKey(), lowBalanceAccount.secret(), destinationAccount.publicKey(), baseFee)
 

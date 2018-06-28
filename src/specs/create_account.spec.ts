@@ -16,7 +16,7 @@ describe('Create Account', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true
@@ -37,7 +37,7 @@ describe('Create Account', function () {
     try {
       await network.transferFunds(
         emptyAccount.publicKey(),
-        emptyAccount.secret(),
+        [emptyAccount.secret()],
         targetAccount.publicKey(),
         transactionAmount,
         true
@@ -56,7 +56,7 @@ describe('Create Account', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true

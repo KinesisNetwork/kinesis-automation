@@ -13,7 +13,7 @@ describe('Fees', function () {
     try {
       await network.transferFunds(
         network.rootPublic,
-        network.rootSecret,
+        [network.rootSecret],
         newAccount.publicKey(),
         transactionAmount,
         true,
@@ -36,14 +36,14 @@ describe('Fees', function () {
     try {
       await network.transferFunds(
         network.rootPublic,
-        network.rootSecret,
+        [network.rootSecret],
         newAccount.publicKey(),
         transactionAmount,
         true,
       )
       await network.transferFunds(
         newAccount.publicKey(),
-        newAccount.secret(),
+        [newAccount.secret()],
         newAccount.publicKey(),
         transactionAmount,
         false,
@@ -65,7 +65,7 @@ describe('Fees', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true,
@@ -82,14 +82,14 @@ describe('Fees', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true,
     )
     await network.transferFunds(
       newAccount.publicKey(),
-      newAccount.secret(),
+      [newAccount.secret()],
       newAccount.publicKey(),
       transactionAmount,
       false,
