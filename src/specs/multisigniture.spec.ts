@@ -3,7 +3,7 @@ import { Operation } from 'js-kinesis-sdk'
 import { expect } from 'chai'
 
 describe('Multisigniture', function () {
-  this.timeout(35000)
+  this.timeout(60000)
 
   it(`Multiple signers can be added to an account, and a new signer can submit a transaction`, async () => {
     const masterKey = network.getNewKeypair()
@@ -129,13 +129,105 @@ describe('Multisigniture', function () {
     expect(postBalance + 10 < 100).to.eql(true)
   })
 
-  // it('Transactions can be submitted if sufficient signatures are provided to an envelope with more than 2 signers', async () => {
+  it('Transactions can be submitted if sufficient signatures are provided to an envelope with more than 2 signers', async () => {
+    const masterKey = network.getNewKeypair()
 
-  // })
+    // Fund the new account
+    await network.transferFunds(
+      network.rootPublic,
+      [network.rootSecret],
+      masterKey.publicKey(),
+      100,
+      true
+    )
 
-  // it('If more signers are added after the threshold is already met, the transaction fails', async () => {
+    const signerOne = network.getNewKeypair()
+    const signerTwo = network.getNewKeypair()
+    const signerThree = network.getNewKeypair()
+    const signerFour = network.getNewKeypair()
+    const signerFive = network.getNewKeypair()
 
-  // })
+    const signatures: Operation.SetOptionsOptions[] = [
+      { signer: { ed25519PublicKey: signerOne.publicKey(), weight: 2 } },
+      { signer: { ed25519PublicKey: signerTwo.publicKey(), weight: 2 } },
+      { signer: { ed25519PublicKey: signerThree.publicKey(), weight: 8 } },
+      { signer: { ed25519PublicKey: signerFour.publicKey(), weight: 3 } },
+      { signer: { ed25519PublicKey: signerFive.publicKey(), weight: 10 } }
+    ]
+
+    // Add the new signers
+    await network.setupMultiSignatureForAccount(masterKey.secret(), masterKey.publicKey(), signatures)
+
+    // Set the thresholds
+    await network.setAccountThresholds(masterKey.secret(), masterKey.publicKey(), {
+      highThreshold: 50,
+      medThreshold: 20,
+      lowThreshold: 1,
+      masterWeight: 1
+    })
+
+    // Do a payment, signing with both signers, so it should succeed
+    await network.transferFunds(
+      masterKey.publicKey(),
+      [signerOne.secret(), signerTwo.secret(), signerThree.secret(), signerFour.secret(), signerFive.secret()],
+      network.rootPublic,
+      10
+    )
+
+    const postBalance = await network.getAccountBalance(masterKey.publicKey())
+    expect(postBalance + 10 < 100).to.eql(true)
+  })
+
+  it.only('If more signers are added after the threshold is already met, the transaction fails', async () => {
+    const masterKey = network.getNewKeypair()
+
+    // Fund the new account
+    await network.transferFunds(
+      network.rootPublic,
+      [network.rootSecret],
+      masterKey.publicKey(),
+      100,
+      true
+    )
+
+    const signerOne = network.getNewKeypair()
+    const signerTwo = network.getNewKeypair()
+    const signerThree = network.getNewKeypair()
+    const signerFour = network.getNewKeypair()
+    const signerFive = network.getNewKeypair()
+
+    const signatures: Operation.SetOptionsOptions[] = [
+      { signer: { ed25519PublicKey: signerOne.publicKey(), weight: 2 } },
+      { signer: { ed25519PublicKey: signerTwo.publicKey(), weight: 2 } },
+      { signer: { ed25519PublicKey: signerThree.publicKey(), weight: 8 } },
+      { signer: { ed25519PublicKey: signerFour.publicKey(), weight: 10 } },
+      { signer: { ed25519PublicKey: signerFive.publicKey(), weight: 12 } }
+    ]
+
+    // Add the new signers
+    await network.setupMultiSignatureForAccount(masterKey.secret(), masterKey.publicKey(), signatures)
+
+    // Set the thresholds
+    await network.setAccountThresholds(masterKey.secret(), masterKey.publicKey(), {
+      highThreshold: 50,
+      medThreshold: 20,
+      lowThreshold: 1,
+      masterWeight: 1
+    })
+
+    // Do a payment, signing with both signers, so it should succeed
+    try {
+      await network.transferFunds(
+        masterKey.publicKey(),
+        [signerOne.secret(), signerTwo.secret(), signerThree.secret(), signerFour.secret(), signerFive.secret()],
+        network.rootPublic,
+        10
+      )
+      throw new Error('Wrong Error')
+    } catch (e) {
+      expect(e.data.extras.result_codes.transaction).to.eql('tx_bad_auth_extra')
+    }
+  })
 
   // it('if the signing weight of the original private key is set to 0, it cannot submit any operations against the account', async () => {
 
