@@ -178,7 +178,7 @@ describe('Multisigniture', function () {
     expect(postBalance + 10 < 100).to.eql(true)
   })
 
-  it.only('If more signers are added after the threshold is already met, the transaction fails', async () => {
+  it('If more signers are added after the threshold is already met, the transaction fails', async () => {
     const masterKey = network.getNewKeypair()
 
     // Fund the new account
@@ -229,7 +229,35 @@ describe('Multisigniture', function () {
     }
   })
 
-  // it('if the signing weight of the original private key is set to 0, it cannot submit any operations against the account', async () => {
+  it('if the signing weight of the original private key is set to 0, it cannot submit any operations against the account', async () => {
+    const masterKey = network.getNewKeypair()
 
-  // })
+    // Fund the new account
+    await network.transferFunds(
+      network.rootPublic,
+      [network.rootSecret],
+      masterKey.publicKey(),
+      100,
+      true
+    )
+
+    // Set the thresholds
+    await network.setAccountThresholds(masterKey.secret(), masterKey.publicKey(), {
+      highThreshold: 10,
+      medThreshold: 1,
+      lowThreshold: 1,
+      masterWeight: 0
+    })
+    // Do a payment, signing with both signers, so it should succeed
+    try {
+      await network.transferFunds(
+        masterKey.publicKey(),
+        [masterKey.secret()],
+        network.rootPublic,
+        10
+      )
+    } catch (e) {
+      expect(e.data.extras.result_codes.transaction).to.eql('tx_bad_auth')
+    }
+  })
 })
