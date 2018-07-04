@@ -42,8 +42,8 @@ describe.only('asset operations', function () {
       console.log(e)
     }
 
-    const AssetBalanceAfterTransaction = await network.getAssetBalance(receivingAccountPublic, 'BulkGold')
-    expect(AssetBalanceAfterTransaction).to.eql(accountBalanceBeforeAsset + Number(assetAmount))
+    const assetBalanceAfterTransaction = await network.getAssetBalance(receivingAccountPublic, 'BulkGold')
+    expect(assetBalanceAfterTransaction).to.eql(accountBalanceBeforeAsset + Number(assetAmount))
   })
 
   it('The fee on the payment operation of the custom asset was equal to the base fee, ie percentage fees arent applied', async () => {
