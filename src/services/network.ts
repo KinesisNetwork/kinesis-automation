@@ -213,11 +213,6 @@ export interface MultiSigOptions {
   thresholdWeights: StellarSdk.Operation.SetOptionsOptions
 }
 
-export interface MultiSigOptions {
-  signers: StellarSdk.Operation.SetOptionsOptions[]
-  thresholdWeights: StellarSdk.Operation.SetOptionsOptions
-}
-
 export async function setupMultiSignatureForAccount(
   signersPrivateKey: string,
   masterPublicKey: string,
