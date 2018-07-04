@@ -16,16 +16,14 @@ export async function getAccountBalance(publicKey: string): Promise<number> {
 }
 
 export async function transferFunds(
-  sourcePublicKey: string,
-  sourcePrivateKey: string,
+  masterPublicKey: string,
+  signingPrivateKeys: string[],
   destinationPublicKey: string,
   amount: number,
   newAccount = false,
   fee?: number
 ) {
-  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
-
-  const account = await server.loadAccount(sourcePublicKey)
+  const account = await server.loadAccount(masterPublicKey)
 
   if (!fee) {
     fee = await currentFeeInStroops(amount)
@@ -46,7 +44,10 @@ export async function transferFunds(
     .addOperation(newAccount ? createAccountOperation : paymentOperation)
     .build()
 
-  transaction.sign(sourceKeypair)
+  signingPrivateKeys.forEach(signersPrivateKey => {
+    const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
+    transaction.sign(signingKeypair)
+  })
 
   const receipt = await server.submitTransaction(transaction)
   return waitForTransaction(receipt.hash)
@@ -75,16 +76,16 @@ async function waitForTransaction(
 }
 
 export async function transferFundsToMultipleAccount(
-  sourcePublicKey: string,
-  sourcePrivateKey: string,
+  masterPublicKey: string,
+  signersPrivateKey: string,
   destinationPublicKey: string[],
   amount: number,
   newAccount = false,
   fee?: number
 ) {
-  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+  const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
 
-  const account = await server.loadAccount(sourcePublicKey)
+  const account = await server.loadAccount(masterPublicKey)
 
   if (!fee) {
     fee = await currentFeeInStroopsMultiOperations(amount, destinationPublicKey)
@@ -109,7 +110,7 @@ export async function transferFundsToMultipleAccount(
     transaction.addOperation(Operation)
   }
   let buildTransaction = transaction.build()
-  buildTransaction.sign(sourceKeypair)
+  buildTransaction.sign(signingKeypair)
   return server.submitTransaction(buildTransaction)
 }
 
@@ -176,33 +177,83 @@ export async function currentBaseFeeString() {
   return String(currentBaseFeeInStroops)
 }
 
-export async function processInflation(sourcePublicKey: string, sourcePrivateKey: string, fee: string) {
-  const account = await server.loadAccount(sourcePublicKey)
+export async function processInflation(masterPublicKey: string, signersPrivateKey: string, fee: string) {
+  const account = await server.loadAccount(masterPublicKey)
   const addInflation = StellarSdk.Operation.inflation({})
-  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+  const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
 
   let transaction = new StellarSdk.TransactionBuilder(account, { fee })
     .addOperation(addInflation)
     .build()
 
-  transaction.sign(sourceKeypair)
+  transaction.sign(signingKeypair)
   return server.submitTransaction(transaction)
 }
 
-export async function mergeAccount(sourcePublicKey: string, sourcePrivateKey: string, destinationKeypair: string, fee: string) {
-  const account = await server.loadAccount(sourcePublicKey)
+export async function mergeAccount(masterPublicKey: string, signersPrivateKey: string, destinationKeypair: string, fee: string) {
+  const account = await server.loadAccount(masterPublicKey)
   const mergeAccountOperation = StellarSdk.Operation.accountMerge({ destination: destinationKeypair })
 
-  const sourceKeypair = StellarSdk.Keypair.fromSecret(sourcePrivateKey)
+  const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
 
   let transaction = new StellarSdk.TransactionBuilder(account, { fee })
     .addOperation(mergeAccountOperation)
     .build()
 
-  transaction.sign(sourceKeypair)
+  transaction.sign(signingKeypair)
   return server.submitTransaction(transaction)
 }
 
 export function readSdkError(e) {
   return e.data.extras.result_codes
+}
+
+export interface MultiSigOptions {
+  signers: StellarSdk.Operation.SetOptionsOptions[]
+  thresholdWeights: StellarSdk.Operation.SetOptionsOptions
+}
+
+export async function setupMultiSignatureForAccount(
+  signersPrivateKey: string,
+  masterPublicKey: string,
+  signaturesList: StellarSdk.Operation.SetOptionsOptions[]): Promise<void> {
+  const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
+  const accountToAddMultiSig = await server.loadAccount(masterPublicKey)
+  const baseFee = (await currentBaseFee()) * signaturesList.length
+
+  const transaction = new StellarSdk.TransactionBuilder(accountToAddMultiSig, { fee: String(baseFee) })
+
+  for (let signer of signaturesList) {
+    transaction.addOperation(StellarSdk.Operation.setOptions(signer))
+  }
+
+  const envelope = transaction.build()
+  envelope.sign(signingKeypair)
+
+  return server.submitTransaction(envelope)
+}
+
+export async function setAccountThresholds(
+  signersPrivateKey: string,
+  masterPublicKey: string,
+  thresholdWeights: {
+    highThreshold: number,
+    medThreshold: number,
+    lowThreshold: number,
+    masterWeight: number
+  }
+): Promise<void> {
+
+  const signingKeypair = StellarSdk.Keypair.fromSecret(signersPrivateKey)
+  const accountForWeights = await server.loadAccount(masterPublicKey)
+  const baseFee = await currentBaseFeeString()
+
+  const transaction = new StellarSdk.TransactionBuilder(accountForWeights, { fee: baseFee })
+
+  transaction.addOperation(StellarSdk.Operation.setOptions(thresholdWeights))
+
+  const envelope = transaction.build()
+  envelope.sign(signingKeypair)
+
+  return server.submitTransaction(envelope)
 }
