@@ -1,6 +1,6 @@
 import * as network from '../services/network'
 import { expect } from 'chai'
-describe.only('asset operations', function () {
+describe('asset operations', function () {
   this.timeout(30000)
 
   it('The balance of the custom asset has increased for the received by the amount specified in the tx', async () => {
