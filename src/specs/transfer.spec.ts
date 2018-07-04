@@ -14,7 +14,7 @@ describe('Transfer', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true
@@ -25,7 +25,7 @@ describe('Transfer', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       false
@@ -48,7 +48,7 @@ describe('Transfer', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true
@@ -57,7 +57,7 @@ describe('Transfer', function () {
     try {
       await network.transferFunds(
         newAccount.publicKey(),
-        newAccount.secret(),
+        [newAccount.secret()],
         targetAccount.publicKey(),
         transactionAmount,
         true
@@ -75,7 +75,7 @@ describe('Transfer', function () {
 
     const tx = await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       newAccount.publicKey(),
       transactionAmount,
       true
