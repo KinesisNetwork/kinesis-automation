@@ -17,7 +17,7 @@ export async function getAccountBalance(publicKey: string): Promise<number> {
 
 export async function getAssetBalance(publicKey: string, asset: string): Promise<number> {
   const account = await server.loadAccount(publicKey)
-  const assetBalance = find(account.balances, (balance) => balance.asset_type === asset) // new StellarSdk.Asset('BulkGold', issuingKeys.publicKey())
+  const assetBalance = find(account.balances, (balance: any) => balance.asset_code === asset)
   return Number(assetBalance.balance)
 }
 
@@ -218,9 +218,7 @@ export async function trustAsset(issuingAccount: string, receivingAccount: strin
   const receivingKeys = StellarSdk.Keypair.fromSecret(receivingAccount)
   const receiverPublic = receivingKeys.publicKey()
 
-  // Create an object to represent the new asset
   const bulkGold = new StellarSdk.Asset('BulkGold', issuingKeys.publicKey())
-  // The receiving account must trust the asset
   const receiver = await server.loadAccount(receiverPublic)
 
   let transaction = new StellarSdk.TransactionBuilder(receiver, { fee })
@@ -231,26 +229,23 @@ export async function trustAsset(issuingAccount: string, receivingAccount: strin
       }))
     .build()
 
-  console.log(transaction)
   transaction.sign(receivingKeys)
   return server.submitTransaction(transaction)
 }
 
-export async function payWithAsset(issuingAccount: string, receivingAccount: string, fee: string) {
+export async function payWithAsset(issuingAccount: string, receivingAccount: string, fee: string, assetAmount: string) {
   const issuingKeys = StellarSdk.Keypair.fromSecret(issuingAccount)
   const receivingKeys = StellarSdk.Keypair.fromSecret(receivingAccount)
 
-  // Create an object to represent the new asset
   const bulkGold = new StellarSdk.Asset('BulkGold', issuingKeys.publicKey())
 
-  // The issuing account actually sends the payment using the asset
   const issuer = await server.loadAccount(issuingKeys.publicKey())
   let transaction = new StellarSdk.TransactionBuilder(issuer, { fee: fee })
     .addOperation(
       StellarSdk.Operation.payment({
         destination: receivingKeys.publicKey(),
         asset: bulkGold,
-        amount: '10'
+        amount: assetAmount
       }))
     .build()
   transaction.sign(issuingKeys)
