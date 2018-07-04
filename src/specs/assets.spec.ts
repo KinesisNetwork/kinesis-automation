@@ -16,7 +16,7 @@ describe('asset operations', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       issuingAccountPublic,
       transferAmount,
       true
@@ -24,7 +24,7 @@ describe('asset operations', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       receivingAccountPublic,
       transferAmount,
       true
@@ -59,7 +59,7 @@ describe('asset operations', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       issuingAccountPublic,
       transferAmount,
       true
@@ -67,7 +67,7 @@ describe('asset operations', function () {
 
     await network.transferFunds(
       network.rootPublic,
-      network.rootSecret,
+      [network.rootSecret],
       receivingAccountPublic,
       transferAmount,
       true
