@@ -4,6 +4,7 @@ import { find } from 'lodash'
 export const rootPublic = 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H'
 export const rootSecret = 'SDHOAMBNLGCE2MV5ZKIVZAQD3VCLGP53P3OBSBI6UN5L5XZI5TKHFQL4'
 export const server = new StellarSdk.Server('https://kinesis-local.abx.com')
+export const BULK_GOLD = 'bulkGold'
 
 StellarSdk.Network.use(new StellarSdk.Network('Test SDF Network ; September 2015'))
 
@@ -238,7 +239,7 @@ export async function payWithAsset(issuingAccount: string, receivingAccount: str
   const issuingKeys = StellarSdk.Keypair.fromSecret(issuingAccount)
   const receivingKeys = StellarSdk.Keypair.fromSecret(receivingAccount)
 
-  const bulkGold = new StellarSdk.Asset('BulkGold', issuingKeys.publicKey())
+  const bulkGold = new StellarSdk.Asset(BULK_GOLD, issuingKeys.publicKey())
 
   const issuer = await server.loadAccount(issuingKeys.publicKey())
   let transaction = new StellarSdk.TransactionBuilder(issuer, { fee: fee })

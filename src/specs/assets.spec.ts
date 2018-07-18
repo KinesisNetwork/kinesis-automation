@@ -34,7 +34,7 @@ describe('asset operations', function () {
     try {
       await network.trustAsset(issuingAccountPrivate, receivingAccountPrivate, String(baseFee))
 
-      accountBalanceBeforeAsset = await network.getAssetBalance(receivingAccountPublic, 'BulkGold')
+      accountBalanceBeforeAsset = await network.getAssetBalance(receivingAccountPublic, network.BULK_GOLD)
 
       await network.payWithAsset(issuingAccountPrivate, receivingAccountPrivate, String(baseFee), assetAmount)
 
@@ -42,7 +42,7 @@ describe('asset operations', function () {
       console.log(e)
     }
 
-    const assetBalanceAfterTransaction = await network.getAssetBalance(receivingAccountPublic, 'BulkGold')
+    const assetBalanceAfterTransaction = await network.getAssetBalance(receivingAccountPublic, network.BULK_GOLD)
     expect(assetBalanceAfterTransaction).to.eql(accountBalanceBeforeAsset + Number(assetAmount))
   })
 
