@@ -19,8 +19,7 @@ before_script:
   - echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
 
   # Power install
-  - npm i -g @abx/power-ups
-  - kinesis start --pull
+  - npx @abx/power-ups start --pull
 
   # Sleep for a minute
   - echo "sleeping to let network stabalise"
