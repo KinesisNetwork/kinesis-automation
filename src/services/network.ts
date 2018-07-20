@@ -4,6 +4,7 @@ import { find } from 'lodash'
 export const rootPublic = 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H'
 export const rootSecret = 'SDHOAMBNLGCE2MV5ZKIVZAQD3VCLGP53P3OBSBI6UN5L5XZI5TKHFQL4'
 export const server = new StellarSdk.Server('https://kinesis-local.abx.com')
+export const BULK_GOLD = 'bulkGold'
 
 StellarSdk.Network.use(new StellarSdk.Network('Test SDF Network ; September 2015'))
 
@@ -13,6 +14,12 @@ export async function getAccountBalance(publicKey: string): Promise<number> {
   const account = await server.loadAccount(publicKey)
   const nativeBalance = find(account.balances, (balance) => balance.asset_type === 'native')
   return Number(nativeBalance.balance)
+}
+
+export async function getAssetBalance(publicKey: string, asset: string): Promise<number> {
+  const account = await server.loadAccount(publicKey)
+  const assetBalance = find(account.balances, (balance: any) => balance.asset_code === asset)
+  return Number(assetBalance.balance)
 }
 
 export async function transferFunds(
@@ -206,6 +213,46 @@ export async function mergeAccount(masterPublicKey: string, signersPrivateKey: s
 
 export function readSdkError(e) {
   return e.data.extras.result_codes
+}
+
+export async function trustAsset(issuingAccount: string, receivingAccount: string, fee: string) {
+  const issuingKeys = StellarSdk.Keypair.fromSecret(issuingAccount)
+  const receivingKeys = StellarSdk.Keypair.fromSecret(receivingAccount)
+  const receiverPublic = receivingKeys.publicKey()
+
+  const bulkGold = new StellarSdk.Asset(BULK_GOLD, issuingKeys.publicKey())
+  const receiver = await server.loadAccount(receiverPublic)
+
+  let transaction = new StellarSdk.TransactionBuilder(receiver, { fee })
+    .addOperation(
+      StellarSdk.Operation.changeTrust({
+        asset: bulkGold,
+        limit: '100'
+      }))
+    .build()
+
+  transaction.sign(receivingKeys)
+  return server.submitTransaction(transaction)
+}
+
+export async function payWithAsset(issuingAccount: string, receivingAccount: string, fee: string, assetAmount: string) {
+  const issuingKeys = StellarSdk.Keypair.fromSecret(issuingAccount)
+  const receivingKeys = StellarSdk.Keypair.fromSecret(receivingAccount)
+
+  const bulkGold = new StellarSdk.Asset(BULK_GOLD, issuingKeys.publicKey())
+
+  const issuer = await server.loadAccount(issuingKeys.publicKey())
+  let transaction = new StellarSdk.TransactionBuilder(issuer, { fee: fee })
+    .addOperation(
+      StellarSdk.Operation.payment({
+        destination: receivingKeys.publicKey(),
+        asset: bulkGold,
+        amount: assetAmount
+      }))
+    .build()
+  transaction.sign(issuingKeys)
+
+  return server.submitTransaction(transaction)
 }
 
 export interface MultiSigOptions {
