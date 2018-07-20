@@ -220,7 +220,7 @@ export async function trustAsset(issuingAccount: string, receivingAccount: strin
   const receivingKeys = StellarSdk.Keypair.fromSecret(receivingAccount)
   const receiverPublic = receivingKeys.publicKey()
 
-  const bulkGold = new StellarSdk.Asset('BulkGold', issuingKeys.publicKey())
+  const bulkGold = new StellarSdk.Asset(BULK_GOLD, issuingKeys.publicKey())
   const receiver = await server.loadAccount(receiverPublic)
 
   let transaction = new StellarSdk.TransactionBuilder(receiver, { fee })
